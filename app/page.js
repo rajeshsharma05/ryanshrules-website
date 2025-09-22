@@ -162,31 +162,30 @@ export default function App() {
         }
     };
 
-    const checkAdminStatus = () => {
-        const adminStatus = localStorage.getItem('ryansh_admin');
-        if (adminStatus === 'true') setIsAdmin(true);
+    const checkAdminStatus = async () => {
+        try {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (session?.user) {
+                setIsAdmin(true);
+                localStorage.setItem('ryansh_admin', 'true');
+            }
+        } catch (error) {
+            console.error('Auth check error:', error);
+        }
     };
 
     // Admin login handler
     const handleLogin = async () => {
         try {
-            // Try to authenticate with Supabase
+            // Authenticate with Supabase Auth
             const { data, error } = await supabase.auth.signInWithPassword({
                 email: loginUsername,
                 password: loginPassword
             });
 
             if (error) {
-                // Fallback to simple credentials for demo (change these!)
-                if (loginUsername === 'admin' && loginPassword === 'ryansh2024') {
-                    setIsAdmin(true);
-                    setShowLogin(false);
-                    localStorage.setItem('ryansh_admin', 'true');
-                    setLoginUsername('');
-                    setLoginPassword('');
-                } else {
-                    showNotification('Invalid credentials', 'error');
-                }
+                console.error('Login error:', error);
+                showNotification('Invalid credentials. Please check your email and password.', 'error');
             } else {
                 // Successful Supabase auth
                 setIsAdmin(true);
@@ -194,6 +193,7 @@ export default function App() {
                 localStorage.setItem('ryansh_admin', 'true');
                 setLoginUsername('');
                 setLoginPassword('');
+                showNotification('Successfully logged in!', 'success');
             }
         } catch (error) {
             console.error('Login error:', error);
@@ -797,13 +797,13 @@ export default function App() {
                 <div className="space-y-4">
                     <div>
                         <input
-                            key="username-input"
-                            type="text"
+                            key="email-input"
+                            type="email"
                             value={loginUsername}
                             onChange={(e) => setLoginUsername(e.target.value)}
-                            placeholder="Username"
+                            placeholder="Admin Email"
                             className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-black"
-                            autoComplete="username"
+                            autoComplete="email"
                         />
                     </div>
                     <div>
@@ -818,7 +818,6 @@ export default function App() {
                             autoComplete="current-password"
                         />
                     </div>
-                    <p className="text-xs text-gray-500">Default: admin / ryansh2024</p>
                     <div className="flex space-x-4">
                         <button onClick={handleLogin} className="flex-1 bg-black text-white py-3 rounded-lg hover:bg-gray-800 transition-colors font-medium">
                             Sign In
