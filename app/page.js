@@ -225,7 +225,7 @@ export default function App() {
     const [tempComicData, setTempComicData] = useState({});
     const [tempVideoData, setTempVideoData] = useState({});
 
-    // Show notification helper
+    // Show notification function
     const showNotification = (message, type = 'success') => {
         setNotification({ message, type });
         setTimeout(() => setNotification(null), 3000);
@@ -455,6 +455,111 @@ export default function App() {
         }
     };
 
+    // Check if user has already liked an item
+    const hasUserLiked = (type, itemId) => {
+        const likedItems = JSON.parse(localStorage.getItem('likedItems') || '{}');
+        return likedItems[`${type}_${itemId}`] === true;
+    };
+
+    // Mark item as liked by user
+    const markAsLiked = (type, itemId) => {
+        const likedItems = JSON.parse(localStorage.getItem('likedItems') || '{}');
+        likedItems[`${type}_${itemId}`] = true;
+        localStorage.setItem('likedItems', JSON.stringify(likedItems));
+    };
+
+    // Like comic
+    const likeComic = async (comicId) => {
+        try {
+            // Check if user already liked this comic
+            if (hasUserLiked('comic', comicId)) {
+                showNotification('You have already liked this comic! ❤️', 'info');
+                return;
+            }
+
+            // Find the comic and increment likes
+            const comic = comics.find(c => c.id === comicId);
+            const newLikes = (comic.likes || 0) + 1;
+
+            // Update in database
+            const { error } = await supabase
+                .from('comics')
+                .update({ likes: newLikes })
+                .eq('id', comicId);
+
+            if (error) throw error;
+
+            // Update local state
+            setComics(comics.map(c =>
+                c.id === comicId ? { ...c, likes: newLikes } : c
+            ));
+
+            // Mark as liked by this user
+            markAsLiked('comic', comicId);
+
+            // Track in Google Analytics
+            if (typeof gtag !== 'undefined') {
+                gtag('event', 'like_content', {
+                    content_type: 'comic',
+                    content_id: comicId,
+                    content_title: comic.title,
+                    value: newLikes
+                });
+            }
+
+            showNotification('❤️ Liked!');
+        } catch (error) {
+            console.error('Error liking comic:', error);
+            showNotification('Failed to like comic. Please try again.', 'error');
+        }
+    };
+
+    // Like video
+    const likeVideo = async (videoId) => {
+        try {
+            // Check if user already liked this video
+            if (hasUserLiked('video', videoId)) {
+                showNotification('You have already liked this video! ❤️', 'info');
+                return;
+            }
+
+            // Find the video and increment likes
+            const video = videos.find(v => v.id === videoId);
+            const newLikes = (video.likes || 0) + 1;
+
+            // Update in database
+            const { error } = await supabase
+                .from('videos')
+                .update({ likes: newLikes })
+                .eq('id', videoId);
+
+            if (error) throw error;
+
+            // Update local state
+            setVideos(videos.map(v =>
+                v.id === videoId ? { ...v, likes: newLikes } : v
+            ));
+
+            // Mark as liked by this user
+            markAsLiked('video', videoId);
+
+            // Track in Google Analytics
+            if (typeof gtag !== 'undefined') {
+                gtag('event', 'like_content', {
+                    content_type: 'video',
+                    content_id: videoId,
+                    content_title: video.title,
+                    value: newLikes
+                });
+            }
+
+            showNotification('❤️ Liked!');
+        } catch (error) {
+            console.error('Error liking video:', error);
+            showNotification('Failed to like video. Please try again.', 'error');
+        }
+    };
+
     // Update comic locally
     const updateComic = (id, field, value) => {
         if (tempComicData[id]) {
@@ -659,8 +764,11 @@ export default function App() {
                             <div className="text-gray-600 hover:text-black">Videos Shared</div>
                         </button>
                         <div>
-                            <div className="text-4xl font-bold mb-2">∞</div>
-                            <div className="text-gray-600">Creativity</div>
+                            <div className="text-4xl font-bold mb-2">
+                                {comics.reduce((sum, comic) => sum + (comic.likes || 0), 0) +
+                                 videos.reduce((sum, video) => sum + (video.likes || 0), 0)}
+                            </div>
+                            <div className="text-gray-600">❤️ Total Likes</div>
                         </div>
                         <div>
                             <div className="text-4xl font-bold mb-2">2024</div>
@@ -725,7 +833,21 @@ export default function App() {
                                         )}
                                         <div className="p-6">
                                             <h3 className="text-xl font-bold mb-2">{comicData.title}</h3>
-                                            <p className="text-gray-600 text-sm mb-4">{comicData.date}</p>
+                                            <p className="text-gray-600 text-sm mb-2">{comicData.date}</p>
+                                            <div className="flex items-center justify-between mb-4">
+                                                <button
+                                                    onClick={() => likeComic(comic.id)}
+                                                    className={`flex items-center space-x-2 transition-colors ${
+                                                        hasUserLiked('comic', comic.id)
+                                                            ? 'text-red-600 cursor-default'
+                                                            : 'text-red-500 hover:text-red-600'
+                                                    }`}
+                                                    disabled={hasUserLiked('comic', comic.id)}
+                                                >
+                                                    <span className="text-xl">{hasUserLiked('comic', comic.id) ? '❤️' : '🤍'}</span>
+                                                    <span className="text-sm font-medium">{comicData.likes || 0} likes</span>
+                                                </button>
+                                            </div>
                                             {isAdmin && (
                                                 <div className="flex space-x-2">
                                                     <button onClick={() => setEditingComic(comic.id)} className="bg-black text-white px-4 py-2 rounded-lg hover:bg-gray-800 transition-colors text-sm">
@@ -802,7 +924,21 @@ export default function App() {
                                         )}
                                         <div className="p-6">
                                             <h3 className="text-xl font-bold mb-2">{videoData.title}</h3>
-                                            <p className="text-gray-600 text-sm mb-4">{videoData.date}</p>
+                                            <p className="text-gray-600 text-sm mb-2">{videoData.date}</p>
+                                            <div className="flex items-center justify-between mb-4">
+                                                <button
+                                                    onClick={() => likeVideo(video.id)}
+                                                    className={`flex items-center space-x-2 transition-colors ${
+                                                        hasUserLiked('video', video.id)
+                                                            ? 'text-red-600 cursor-default'
+                                                            : 'text-red-500 hover:text-red-600'
+                                                    }`}
+                                                    disabled={hasUserLiked('video', video.id)}
+                                                >
+                                                    <span className="text-xl">{hasUserLiked('video', video.id) ? '❤️' : '🤍'}</span>
+                                                    <span className="text-sm font-medium">{videoData.likes || 0} likes</span>
+                                                </button>
+                                            </div>
                                             {isAdmin && (
                                                 <div className="flex space-x-2">
                                                     <button onClick={() => setEditingVideo(video.id)} className="bg-black text-white px-4 py-2 rounded-lg hover:bg-gray-800 transition-colors text-sm">
@@ -932,6 +1068,8 @@ export default function App() {
             <div className={`fixed top-20 right-4 left-4 md:left-auto md:right-4 z-50 px-6 py-4 rounded-lg shadow-lg transition-all duration-300 ${
                 notification.type === 'error'
                     ? 'bg-red-500 text-white'
+                    : notification.type === 'info'
+                    ? 'bg-blue-500 text-white'
                     : 'bg-green-500 text-white'
             }`}>
                 <div className="flex items-center space-x-2">
