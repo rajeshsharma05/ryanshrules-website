@@ -5,7 +5,6 @@ export const metadata = {
     description: 'Discover the amazing world of Ryansh Sharma - a young creative artist from Sydney, Australia. Explore original comic strips, creative videos, and artistic works by this talented creative kid.',
     keywords: 'Ryansh Sharma, creative artist, comic creator, Sydney artist, creative kid, comics, videos, Australian artist, young artist, creative portfolio, comic strips',
     author: 'Ryansh Sharma',
-    viewport: 'width=device-width, initial-scale=1',
     robots: 'index, follow',
     canonical: 'https://ryanshrules.com',
     openGraph: {

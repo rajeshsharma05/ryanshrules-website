@@ -91,63 +91,37 @@ const ImageUploader = ({ onImageUpload, currentImage }) => {
 };
 
 // Comic Edit Form Component
-const ComicEditForm = React.memo(({ comic, onUpdate, onSave, onCancel }) => {
-    const [localTitle, setLocalTitle] = useState(comic.title || '');
-    const [localDate, setLocalDate] = useState(comic.date || '');
-    const [localImageUrl, setLocalImageUrl] = useState(comic.image_url || '');
-
-    // Only update local state when comic changes externally, not from our own updates
-    useEffect(() => {
-        if (comic.title !== localTitle) setLocalTitle(comic.title || '');
-        if (comic.date !== localDate) setLocalDate(comic.date || '');
-        if (comic.image_url !== localImageUrl) setLocalImageUrl(comic.image_url || '');
-    }, [comic.id]); // Only depend on comic.id, not the values
-
-    const handleTitleChange = (e) => {
-        const value = e.target.value;
-        setLocalTitle(value);
-        onUpdate(comic.id, 'title', value);
-    };
-
-    const handleDateChange = (e) => {
-        const value = e.target.value;
-        setLocalDate(value);
-        onUpdate(comic.id, 'date', value);
-    };
-
-    const handleImageUpload = (url) => {
-        setLocalImageUrl(url);
-        onUpdate(comic.id, 'image_url', url);
-    };
+const ComicEditForm = ({ comic, onSave, onCancel }) => {
+    const [title, setTitle] = useState(comic.title || '');
+    const [date, setDate] = useState(comic.date || '');
+    const [imageUrl, setImageUrl] = useState(comic.image_url || '');
 
     const handleSave = () => {
-        onSave({ ...comic, title: localTitle, date: localDate, image_url: localImageUrl });
+        onSave({ ...comic, title, date, image_url: imageUrl });
     };
 
     return (
         <div className="bg-gray-50 p-6">
             <div className="mb-4">
                 <input
-                    key={`title-${comic.id}`}
                     type="text"
-                    value={localTitle}
-                    onChange={handleTitleChange}
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
                     placeholder="Comic title"
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-black mb-4"
                     autoComplete="off"
                 />
                 <input
-                    key={`date-${comic.id}`}
                     type="text"
-                    value={localDate}
-                    onChange={handleDateChange}
+                    value={date}
+                    onChange={(e) => setDate(e.target.value)}
                     placeholder="Date (e.g., September 2024)"
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-black mb-4"
                     autoComplete="off"
                 />
                 <ImageUploader
-                    onImageUpload={handleImageUpload}
-                    currentImage={localImageUrl}
+                    onImageUpload={setImageUrl}
+                    currentImage={imageUrl}
                 />
             </div>
             <div className="flex space-x-2">
@@ -160,20 +134,13 @@ const ComicEditForm = React.memo(({ comic, onUpdate, onSave, onCancel }) => {
             </div>
         </div>
     );
-});
+};
 
 // Video Edit Form Component
-const VideoEditForm = React.memo(({ video, onUpdate, onSave, onCancel }) => {
-    const [localTitle, setLocalTitle] = useState(video.title || '');
-    const [localDate, setLocalDate] = useState(video.date || '');
-    const [localYoutubeId, setLocalYoutubeId] = useState(video.youtube_id || '');
-
-    // Only update local state when video changes externally, not from our own updates
-    useEffect(() => {
-        if (video.title !== localTitle) setLocalTitle(video.title || '');
-        if (video.date !== localDate) setLocalDate(video.date || '');
-        if (video.youtube_id !== localYoutubeId) setLocalYoutubeId(video.youtube_id || '');
-    }, [video.id]); // Only depend on video.id, not the values
+const VideoEditForm = ({ video, onSave, onCancel }) => {
+    const [title, setTitle] = useState(video.title || '');
+    const [date, setDate] = useState(video.date || '');
+    const [youtubeId, setYoutubeId] = useState(video.youtube_id || '');
 
     const extractYouTubeId = (url) => {
         const regex = /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([^&\s]+)/;
@@ -181,53 +148,37 @@ const VideoEditForm = React.memo(({ video, onUpdate, onSave, onCancel }) => {
         return match ? match[1] : url;
     };
 
-    const handleTitleChange = (e) => {
-        const value = e.target.value;
-        setLocalTitle(value);
-        onUpdate(video.id, 'title', value);
-    };
-
-    const handleDateChange = (e) => {
-        const value = e.target.value;
-        setLocalDate(value);
-        onUpdate(video.id, 'date', value);
-    };
-
     const handleYoutubeChange = (e) => {
         const extractedId = extractYouTubeId(e.target.value);
-        setLocalYoutubeId(extractedId);
-        onUpdate(video.id, 'youtube_id', extractedId);
+        setYoutubeId(extractedId);
     };
 
     const handleSave = () => {
-        onSave({ ...video, title: localTitle, date: localDate, youtube_id: localYoutubeId });
+        onSave({ ...video, title, date, youtube_id: youtubeId });
     };
 
     return (
         <div className="bg-gray-50 p-6">
             <div className="mb-4">
                 <input
-                    key={`vtitle-${video.id}`}
                     type="text"
-                    value={localTitle}
-                    onChange={handleTitleChange}
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
                     placeholder="Video title"
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-black mb-4"
                     autoComplete="off"
                 />
                 <input
-                    key={`vdate-${video.id}`}
                     type="text"
-                    value={localDate}
-                    onChange={handleDateChange}
+                    value={date}
+                    onChange={(e) => setDate(e.target.value)}
                     placeholder="Date (e.g., September 2024)"
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-black mb-4"
                     autoComplete="off"
                 />
                 <input
-                    key={`vyoutube-${video.id}`}
                     type="text"
-                    value={localYoutubeId}
+                    value={youtubeId}
                     onChange={handleYoutubeChange}
                     placeholder="YouTube URL or ID"
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-black"
@@ -247,7 +198,7 @@ const VideoEditForm = React.memo(({ video, onUpdate, onSave, onCancel }) => {
             </div>
         </div>
     );
-});
+};
 
 // Main App Component
 export default function App() {
@@ -747,11 +698,12 @@ export default function App() {
                                 {editingComic === comic.id ? (
                                     <ComicEditForm
                                         comic={comicData}
-                                        onUpdate={updateComic}
                                         onSave={saveComic}
                                         onCancel={() => {
                                             setEditingComic(null);
-                                            if (comic.is_temp) deleteComic(comic.id);
+                                            if (comic.is_temp) {
+                                                setComics(prevComics => prevComics.filter(c => c.id !== comic.id));
+                                            }
                                         }}
                                     />
                                 ) : (
@@ -823,11 +775,12 @@ export default function App() {
                                 {editingVideo === video.id ? (
                                     <VideoEditForm
                                         video={videoData}
-                                        onUpdate={updateVideo}
                                         onSave={saveVideo}
                                         onCancel={() => {
                                             setEditingVideo(null);
-                                            if (video.is_temp) deleteVideo(video.id);
+                                            if (video.is_temp) {
+                                                setVideos(prevVideos => prevVideos.filter(v => v.id !== video.id));
+                                            }
                                         }}
                                     />
                                 ) : (
