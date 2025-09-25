@@ -91,50 +91,63 @@ const ImageUploader = ({ onImageUpload, currentImage }) => {
 };
 
 // Comic Edit Form Component
-const ComicEditForm = ({ comic, onUpdate, onSave, onCancel }) => {
-    const [title, setTitle] = useState(comic.title);
-    const [date, setDate] = useState(comic.date);
-    const [imageUrl, setImageUrl] = useState(comic.image_url);
+const ComicEditForm = React.memo(({ comic, onUpdate, onSave, onCancel }) => {
+    const [localTitle, setLocalTitle] = useState(comic.title || '');
+    const [localDate, setLocalDate] = useState(comic.date || '');
+    const [localImageUrl, setLocalImageUrl] = useState(comic.image_url || '');
 
+    // Only update local state when comic changes externally, not from our own updates
     useEffect(() => {
-        setTitle(comic.title);
-        setDate(comic.date);
-        setImageUrl(comic.image_url);
-    }, [comic]);
+        if (comic.title !== localTitle) setLocalTitle(comic.title || '');
+        if (comic.date !== localDate) setLocalDate(comic.date || '');
+        if (comic.image_url !== localImageUrl) setLocalImageUrl(comic.image_url || '');
+    }, [comic.id]); // Only depend on comic.id, not the values
+
+    const handleTitleChange = (e) => {
+        const value = e.target.value;
+        setLocalTitle(value);
+        onUpdate(comic.id, 'title', value);
+    };
+
+    const handleDateChange = (e) => {
+        const value = e.target.value;
+        setLocalDate(value);
+        onUpdate(comic.id, 'date', value);
+    };
+
+    const handleImageUpload = (url) => {
+        setLocalImageUrl(url);
+        onUpdate(comic.id, 'image_url', url);
+    };
 
     const handleSave = () => {
-        onSave({ ...comic, title, date, image_url: imageUrl });
+        onSave({ ...comic, title: localTitle, date: localDate, image_url: localImageUrl });
     };
 
     return (
         <div className="bg-gray-50 p-6">
             <div className="mb-4">
                 <input
+                    key={`title-${comic.id}`}
                     type="text"
-                    value={title}
-                    onChange={(e) => {
-                        setTitle(e.target.value);
-                        onUpdate(comic.id, 'title', e.target.value);
-                    }}
+                    value={localTitle}
+                    onChange={handleTitleChange}
                     placeholder="Comic title"
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-black mb-4"
+                    autoComplete="off"
                 />
                 <input
+                    key={`date-${comic.id}`}
                     type="text"
-                    value={date}
-                    onChange={(e) => {
-                        setDate(e.target.value);
-                        onUpdate(comic.id, 'date', e.target.value);
-                    }}
+                    value={localDate}
+                    onChange={handleDateChange}
                     placeholder="Date (e.g., September 2024)"
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-black mb-4"
+                    autoComplete="off"
                 />
                 <ImageUploader
-                    onImageUpload={(url) => {
-                        setImageUrl(url);
-                        onUpdate(comic.id, 'image_url', url);
-                    }}
-                    currentImage={imageUrl}
+                    onImageUpload={handleImageUpload}
+                    currentImage={localImageUrl}
                 />
             </div>
             <div className="flex space-x-2">
@@ -147,19 +160,20 @@ const ComicEditForm = ({ comic, onUpdate, onSave, onCancel }) => {
             </div>
         </div>
     );
-};
+});
 
 // Video Edit Form Component
-const VideoEditForm = ({ video, onUpdate, onSave, onCancel }) => {
-    const [title, setTitle] = useState(video.title);
-    const [date, setDate] = useState(video.date);
-    const [youtubeId, setYoutubeId] = useState(video.youtube_id);
+const VideoEditForm = React.memo(({ video, onUpdate, onSave, onCancel }) => {
+    const [localTitle, setLocalTitle] = useState(video.title || '');
+    const [localDate, setLocalDate] = useState(video.date || '');
+    const [localYoutubeId, setLocalYoutubeId] = useState(video.youtube_id || '');
 
+    // Only update local state when video changes externally, not from our own updates
     useEffect(() => {
-        setTitle(video.title);
-        setDate(video.date);
-        setYoutubeId(video.youtube_id);
-    }, [video]);
+        if (video.title !== localTitle) setLocalTitle(video.title || '');
+        if (video.date !== localDate) setLocalDate(video.date || '');
+        if (video.youtube_id !== localYoutubeId) setLocalYoutubeId(video.youtube_id || '');
+    }, [video.id]); // Only depend on video.id, not the values
 
     const extractYouTubeId = (url) => {
         const regex = /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([^&\s]+)/;
@@ -167,43 +181,57 @@ const VideoEditForm = ({ video, onUpdate, onSave, onCancel }) => {
         return match ? match[1] : url;
     };
 
+    const handleTitleChange = (e) => {
+        const value = e.target.value;
+        setLocalTitle(value);
+        onUpdate(video.id, 'title', value);
+    };
+
+    const handleDateChange = (e) => {
+        const value = e.target.value;
+        setLocalDate(value);
+        onUpdate(video.id, 'date', value);
+    };
+
+    const handleYoutubeChange = (e) => {
+        const extractedId = extractYouTubeId(e.target.value);
+        setLocalYoutubeId(extractedId);
+        onUpdate(video.id, 'youtube_id', extractedId);
+    };
+
     const handleSave = () => {
-        onSave({ ...video, title, date, youtube_id: youtubeId });
+        onSave({ ...video, title: localTitle, date: localDate, youtube_id: localYoutubeId });
     };
 
     return (
         <div className="bg-gray-50 p-6">
             <div className="mb-4">
                 <input
+                    key={`vtitle-${video.id}`}
                     type="text"
-                    value={title}
-                    onChange={(e) => {
-                        setTitle(e.target.value);
-                        onUpdate(video.id, 'title', e.target.value);
-                    }}
+                    value={localTitle}
+                    onChange={handleTitleChange}
                     placeholder="Video title"
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-black mb-4"
+                    autoComplete="off"
                 />
                 <input
+                    key={`vdate-${video.id}`}
                     type="text"
-                    value={date}
-                    onChange={(e) => {
-                        setDate(e.target.value);
-                        onUpdate(video.id, 'date', e.target.value);
-                    }}
+                    value={localDate}
+                    onChange={handleDateChange}
                     placeholder="Date (e.g., September 2024)"
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-black mb-4"
+                    autoComplete="off"
                 />
                 <input
+                    key={`vyoutube-${video.id}`}
                     type="text"
-                    value={youtubeId}
-                    onChange={(e) => {
-                        const extractedId = extractYouTubeId(e.target.value);
-                        setYoutubeId(extractedId);
-                        onUpdate(video.id, 'youtube_id', extractedId);
-                    }}
+                    value={localYoutubeId}
+                    onChange={handleYoutubeChange}
                     placeholder="YouTube URL or ID"
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-black"
+                    autoComplete="off"
                 />
                 <p className="text-xs text-gray-500 mt-2">
                     Paste a YouTube URL (e.g., https://youtube.com/watch?v=dQw4w9WgXcQ) or just the video ID
@@ -219,7 +247,7 @@ const VideoEditForm = ({ video, onUpdate, onSave, onCancel }) => {
             </div>
         </div>
     );
-};
+});
 
 // Main App Component
 export default function App() {
@@ -630,7 +658,7 @@ export default function App() {
                                 Create.<br />Imagine.<br /><span className="text-gray-400">Share.</span>
                             </h1>
                             <p className="text-lg md:text-xl text-gray-400 mb-8 leading-relaxed">
-                                Hi, I'm Ryansh from Sydney. I create comics, make videos, and share my creative journey.
+                                Hi, I'm Ryansh Sharma, a creative artist from Sydney, Australia. I create original comic strips, entertaining videos, and share my artistic journey as a young creative talent.
                             </p>
                             <div className="flex flex-wrap gap-4">
                                 <button onClick={() => navigateToSection('comics')} className="bg-white text-black px-6 md:px-8 py-3 md:py-4 rounded-full font-medium hover:bg-gray-200 transition-all transform hover:scale-105 inline-flex items-center text-sm md:text-base">
@@ -699,7 +727,7 @@ export default function App() {
             <div className="max-w-7xl mx-auto px-6 lg:px-8 py-12">
                 <div className="mb-12">
                     <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4">Comics</h1>
-                    <p className="text-gray-600 text-lg">My collection of original comic strips and artwork</p>
+                    <p className="text-gray-600 text-lg">Discover my collection of original comic strips and creative artwork by Ryansh Sharma - Sydney's young comic creator</p>
                 </div>
 
                 {isAdmin && (
@@ -775,7 +803,7 @@ export default function App() {
             <div className="max-w-7xl mx-auto px-6 lg:px-8 py-12">
                 <div className="mb-12">
                     <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4">Videos</h1>
-                    <p className="text-gray-600 text-lg">My creative process, performances, and video content</p>
+                    <p className="text-gray-600 text-lg">Watch my creative process, performances, and engaging video content by Ryansh Sharma from Sydney</p>
                 </div>
 
                 {isAdmin && (
