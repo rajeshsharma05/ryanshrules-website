@@ -1,0 +1,18 @@
+#!/bin/bash
+
+echo "GitHub Push Script"
+echo "=================="
+echo ""
+echo "To push your code to GitHub:"
+echo "1. Open Terminal"
+echo "2. Navigate to: cd /Users/ryansh.sharma/code/ryanshrules/ryanshrules-website"
+echo "3. Run: git push -u origin main"
+echo "4. When prompted for password, paste your Personal Access Token"
+echo ""
+echo "Alternative - Set up credential helper:"
+echo "git config credential.helper store"
+echo "git push -u origin main"
+echo ""
+echo "Or use GitHub CLI:"
+echo "gh auth login"
+echo "git push -u origin main"

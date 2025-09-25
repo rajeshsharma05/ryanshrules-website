@@ -90,6 +90,137 @@ const ImageUploader = ({ onImageUpload, currentImage }) => {
     );
 };
 
+// Comic Edit Form Component
+const ComicEditForm = ({ comic, onUpdate, onSave, onCancel }) => {
+    const [title, setTitle] = useState(comic.title);
+    const [date, setDate] = useState(comic.date);
+    const [imageUrl, setImageUrl] = useState(comic.image_url);
+
+    useEffect(() => {
+        setTitle(comic.title);
+        setDate(comic.date);
+        setImageUrl(comic.image_url);
+    }, [comic]);
+
+    const handleSave = () => {
+        onSave({ ...comic, title, date, image_url: imageUrl });
+    };
+
+    return (
+        <div className="bg-gray-50 p-6">
+            <div className="mb-4">
+                <input
+                    type="text"
+                    value={title}
+                    onChange={(e) => {
+                        setTitle(e.target.value);
+                        onUpdate(comic.id, 'title', e.target.value);
+                    }}
+                    placeholder="Comic title"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-black mb-4"
+                />
+                <input
+                    type="text"
+                    value={date}
+                    onChange={(e) => {
+                        setDate(e.target.value);
+                        onUpdate(comic.id, 'date', e.target.value);
+                    }}
+                    placeholder="Date (e.g., September 2024)"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-black mb-4"
+                />
+                <ImageUploader
+                    onImageUpload={(url) => {
+                        setImageUrl(url);
+                        onUpdate(comic.id, 'image_url', url);
+                    }}
+                    currentImage={imageUrl}
+                />
+            </div>
+            <div className="flex space-x-2">
+                <button onClick={handleSave} className="flex-1 bg-black text-white py-2 rounded-lg hover:bg-gray-800 transition-colors">
+                    Save
+                </button>
+                <button onClick={onCancel} className="flex-1 bg-gray-200 text-black py-2 rounded-lg hover:bg-gray-300 transition-colors">
+                    Cancel
+                </button>
+            </div>
+        </div>
+    );
+};
+
+// Video Edit Form Component
+const VideoEditForm = ({ video, onUpdate, onSave, onCancel }) => {
+    const [title, setTitle] = useState(video.title);
+    const [date, setDate] = useState(video.date);
+    const [youtubeId, setYoutubeId] = useState(video.youtube_id);
+
+    useEffect(() => {
+        setTitle(video.title);
+        setDate(video.date);
+        setYoutubeId(video.youtube_id);
+    }, [video]);
+
+    const extractYouTubeId = (url) => {
+        const regex = /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([^&\s]+)/;
+        const match = url.match(regex);
+        return match ? match[1] : url;
+    };
+
+    const handleSave = () => {
+        onSave({ ...video, title, date, youtube_id: youtubeId });
+    };
+
+    return (
+        <div className="bg-gray-50 p-6">
+            <div className="mb-4">
+                <input
+                    type="text"
+                    value={title}
+                    onChange={(e) => {
+                        setTitle(e.target.value);
+                        onUpdate(video.id, 'title', e.target.value);
+                    }}
+                    placeholder="Video title"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-black mb-4"
+                />
+                <input
+                    type="text"
+                    value={date}
+                    onChange={(e) => {
+                        setDate(e.target.value);
+                        onUpdate(video.id, 'date', e.target.value);
+                    }}
+                    placeholder="Date (e.g., September 2024)"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-black mb-4"
+                />
+                <input
+                    type="text"
+                    value={youtubeId}
+                    onChange={(e) => {
+                        const extractedId = extractYouTubeId(e.target.value);
+                        setYoutubeId(extractedId);
+                        onUpdate(video.id, 'youtube_id', extractedId);
+                    }}
+                    placeholder="YouTube URL or ID"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-black"
+                />
+                <p className="text-xs text-gray-500 mt-2">
+                    Paste a YouTube URL (e.g., https://youtube.com/watch?v=dQw4w9WgXcQ) or just the video ID
+                </p>
+            </div>
+            <div className="flex space-x-2">
+                <button onClick={handleSave} className="flex-1 bg-black text-white py-2 rounded-lg hover:bg-gray-800 transition-colors">
+                    Save
+                </button>
+                <button onClick={onCancel} className="flex-1 bg-gray-200 text-black py-2 rounded-lg hover:bg-gray-300 transition-colors">
+                    Cancel
+                </button>
+            </div>
+        </div>
+    );
+};
+
 // Main App Component
 export default function App() {
     const [isAdmin, setIsAdmin] = useState(false);
@@ -121,10 +252,36 @@ export default function App() {
         setTimeout(() => setNotification(null), 3000);
     };
 
+    // Navigate to section with history support
+    const navigateToSection = (section) => {
+        setCurrentSection(section);
+        const url = section === 'home' ? window.location.pathname : `${window.location.pathname}?section=${section}`;
+        window.history.pushState({ section }, '', url);
+    };
+
     // Load data from Supabase
     useEffect(() => {
         loadContent();
         checkAdminStatus();
+
+        // Handle browser back/forward buttons
+        const handlePopState = (event) => {
+            const section = event.state?.section || 'home';
+            setCurrentSection(section);
+        };
+
+        window.addEventListener('popstate', handlePopState);
+
+        // Set initial URL state
+        const urlParams = new URLSearchParams(window.location.search);
+        const section = urlParams.get('section') || 'home';
+        if (section !== 'home') {
+            setCurrentSection(section);
+        }
+
+        return () => {
+            window.removeEventListener('popstate', handlePopState);
+        };
     }, []);
 
     const loadContent = async () => {
@@ -402,22 +559,25 @@ export default function App() {
             <div className="max-w-7xl mx-auto px-6 lg:px-8">
                 <div className="flex justify-between items-center h-16">
                     <div className="flex items-center">
-            <span className="text-white text-xl font-medium tracking-tight">
+            <button
+              onClick={() => navigateToSection('home')}
+              className="text-white text-xl font-medium tracking-tight hover:text-gray-200 transition-colors cursor-pointer"
+            >
               RYANSH
-            </span>
+            </button>
                     </div>
 
                     <div className="hidden md:flex items-center space-x-8">
-                        <button onClick={() => setCurrentSection('home')} className={`text-sm font-medium transition-colors ${currentSection === 'home' ? 'text-white' : 'text-gray-400 hover:text-white'}`}>
+                        <button onClick={() => navigateToSection('home')} className={`text-sm font-medium transition-colors ${currentSection === 'home' ? 'text-white' : 'text-gray-400 hover:text-white'}`}>
                             Home
                         </button>
-                        <button onClick={() => setCurrentSection('comics')} className={`text-sm font-medium transition-colors ${currentSection === 'comics' ? 'text-white' : 'text-gray-400 hover:text-white'}`}>
+                        <button onClick={() => navigateToSection('comics')} className={`text-sm font-medium transition-colors ${currentSection === 'comics' ? 'text-white' : 'text-gray-400 hover:text-white'}`}>
                             Comics
                         </button>
-                        <button onClick={() => setCurrentSection('videos')} className={`text-sm font-medium transition-colors ${currentSection === 'videos' ? 'text-white' : 'text-gray-400 hover:text-white'}`}>
+                        <button onClick={() => navigateToSection('videos')} className={`text-sm font-medium transition-colors ${currentSection === 'videos' ? 'text-white' : 'text-gray-400 hover:text-white'}`}>
                             Videos
                         </button>
-                        <button onClick={() => setCurrentSection('about')} className={`text-sm font-medium transition-colors ${currentSection === 'about' ? 'text-white' : 'text-gray-400 hover:text-white'}`}>
+                        <button onClick={() => navigateToSection('about')} className={`text-sm font-medium transition-colors ${currentSection === 'about' ? 'text-white' : 'text-gray-400 hover:text-white'}`}>
                             About
                         </button>
                     </div>
@@ -473,11 +633,11 @@ export default function App() {
                                 Hi, I'm Ryansh from Sydney. I create comics, make videos, and share my creative journey.
                             </p>
                             <div className="flex flex-wrap gap-4">
-                                <button onClick={() => setCurrentSection('comics')} className="bg-white text-black px-6 md:px-8 py-3 md:py-4 rounded-full font-medium hover:bg-gray-200 transition-all transform hover:scale-105 inline-flex items-center text-sm md:text-base">
+                                <button onClick={() => navigateToSection('comics')} className="bg-white text-black px-6 md:px-8 py-3 md:py-4 rounded-full font-medium hover:bg-gray-200 transition-all transform hover:scale-105 inline-flex items-center text-sm md:text-base">
                                     Explore Comics
                                     <ArrowRight className="ml-2" size={20} />
                                 </button>
-                                <button onClick={() => setCurrentSection('videos')} className="bg-transparent text-white border border-white px-6 md:px-8 py-3 md:py-4 rounded-full font-medium hover:bg-white hover:text-black transition-all transform hover:scale-105 text-sm md:text-base">
+                                <button onClick={() => navigateToSection('videos')} className="bg-transparent text-white border border-white px-6 md:px-8 py-3 md:py-4 rounded-full font-medium hover:bg-white hover:text-black transition-all transform hover:scale-105 text-sm md:text-base">
                                     Watch Videos
                                 </button>
                             </div>
@@ -485,22 +645,22 @@ export default function App() {
                         <div className="relative">
                             <div className="bg-gradient-to-br from-gray-800 to-black rounded-3xl p-8 transform rotate-3 hover:rotate-0 transition-transform duration-500">
                                 <div className="grid grid-cols-2 gap-4">
-                                    <div className="bg-gray-900 rounded-xl p-6 text-center">
+                                    <button onClick={() => navigateToSection('about')} className="bg-gray-900 rounded-xl p-6 text-center hover:bg-gray-800 transition-colors cursor-pointer">
                                         <Palette size={32} className="mx-auto mb-2" />
                                         <p className="text-sm text-gray-400">Artist</p>
-                                    </div>
-                                    <div className="bg-gray-900 rounded-xl p-6 text-center">
+                                    </button>
+                                    <button onClick={() => navigateToSection('videos')} className="bg-gray-900 rounded-xl p-6 text-center hover:bg-gray-800 transition-colors cursor-pointer">
                                         <Film size={32} className="mx-auto mb-2" />
                                         <p className="text-sm text-gray-400">Creator</p>
-                                    </div>
-                                    <div className="bg-gray-900 rounded-xl p-6 text-center">
+                                    </button>
+                                    <button onClick={() => navigateToSection('comics')} className="bg-gray-900 rounded-xl p-6 text-center hover:bg-gray-800 transition-colors cursor-pointer">
                                         <Grid size={32} className="mx-auto mb-2" />
                                         <p className="text-sm text-gray-400">Comics</p>
-                                    </div>
-                                    <div className="bg-gray-900 rounded-xl p-6 text-center">
+                                    </button>
+                                    <button onClick={() => navigateToSection('videos')} className="bg-gray-900 rounded-xl p-6 text-center hover:bg-gray-800 transition-colors cursor-pointer">
                                         <Play size={32} className="mx-auto mb-2" />
                                         <p className="text-sm text-gray-400">Videos</p>
-                                    </div>
+                                    </button>
                                 </div>
                             </div>
                         </div>
@@ -511,14 +671,14 @@ export default function App() {
             <div className="bg-white text-black py-20">
                 <div className="max-w-7xl mx-auto px-6 lg:px-8">
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
-                        <div>
+                        <button onClick={() => navigateToSection('comics')} className="hover:scale-105 transition-transform cursor-pointer">
                             <div className="text-4xl font-bold mb-2">{comics.length}</div>
-                            <div className="text-gray-600">Comics Created</div>
-                        </div>
-                        <div>
+                            <div className="text-gray-600 hover:text-black">Comics Created</div>
+                        </button>
+                        <button onClick={() => navigateToSection('videos')} className="hover:scale-105 transition-transform cursor-pointer">
                             <div className="text-4xl font-bold mb-2">{videos.length}</div>
-                            <div className="text-gray-600">Videos Shared</div>
-                        </div>
+                            <div className="text-gray-600 hover:text-black">Videos Shared</div>
+                        </button>
                         <div>
                             <div className="text-4xl font-bold mb-2">∞</div>
                             <div className="text-gray-600">Creativity</div>
@@ -557,36 +717,15 @@ export default function App() {
                         return (
                             <div key={comic.id} className="group relative overflow-hidden rounded-2xl hover:shadow-2xl transition-all duration-300" onMouseEnter={() => setHoveredCard(comic.id)} onMouseLeave={() => setHoveredCard(null)}>
                                 {editingComic === comic.id ? (
-                                    <div className="bg-gray-50 p-6">
-                                        <div className="mb-4">
-                                            <input
-                                                type="text"
-                                                value={comicData.title}
-                                                onChange={(e) => updateComic(comic.id, 'title', e.target.value)}
-                                                placeholder="Comic title"
-                                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-black mb-4"
-                                            />
-                                            <input
-                                                type="text"
-                                                value={comicData.date}
-                                                onChange={(e) => updateComic(comic.id, 'date', e.target.value)}
-                                                placeholder="Date (e.g., September 2024)"
-                                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-black mb-4"
-                                            />
-                                            <ImageUploader
-                                                onImageUpload={(url) => updateComic(comic.id, 'image_url', url)}
-                                                currentImage={comicData.image_url}
-                                            />
-                                        </div>
-                                        <div className="flex space-x-2">
-                                            <button onClick={() => saveComic(comicData)} className="flex-1 bg-black text-white py-2 rounded-lg hover:bg-gray-800 transition-colors">
-                                                Save
-                                            </button>
-                                            <button onClick={() => { setEditingComic(null); if (comic.is_temp) deleteComic(comic.id); }} className="flex-1 bg-gray-200 text-black py-2 rounded-lg hover:bg-gray-300 transition-colors">
-                                                Cancel
-                                            </button>
-                                        </div>
-                                    </div>
+                                    <ComicEditForm
+                                        comic={comicData}
+                                        onUpdate={updateComic}
+                                        onSave={saveComic}
+                                        onCancel={() => {
+                                            setEditingComic(null);
+                                            if (comic.is_temp) deleteComic(comic.id);
+                                        }}
+                                    />
                                 ) : (
                                     <>
                                         {comicData.image_url ? (
@@ -654,42 +793,15 @@ export default function App() {
                         return (
                             <div key={video.id} className="group relative overflow-hidden rounded-2xl hover:shadow-2xl transition-all duration-300">
                                 {editingVideo === video.id ? (
-                                    <div className="bg-gray-50 p-6">
-                                        <div className="mb-4">
-                                            <input
-                                                type="text"
-                                                value={videoData.title}
-                                                onChange={(e) => updateVideo(video.id, 'title', e.target.value)}
-                                                placeholder="Video title"
-                                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-black mb-4"
-                                            />
-                                            <input
-                                                type="text"
-                                                value={videoData.date}
-                                                onChange={(e) => updateVideo(video.id, 'date', e.target.value)}
-                                                placeholder="Date (e.g., September 2024)"
-                                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-black mb-4"
-                                            />
-                                            <input
-                                                type="text"
-                                                value={videoData.youtube_id}
-                                                onChange={(e) => updateVideo(video.id, 'youtube_id', extractYouTubeId(e.target.value))}
-                                                placeholder="YouTube URL or ID"
-                                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-black"
-                                            />
-                                            <p className="text-xs text-gray-500 mt-2">
-                                                Paste a YouTube URL (e.g., https://youtube.com/watch?v=dQw4w9WgXcQ) or just the video ID
-                                            </p>
-                                        </div>
-                                        <div className="flex space-x-2">
-                                            <button onClick={() => saveVideo(videoData)} className="flex-1 bg-black text-white py-2 rounded-lg hover:bg-gray-800 transition-colors">
-                                                Save
-                                            </button>
-                                            <button onClick={() => { setEditingVideo(null); if (video.is_temp) deleteVideo(video.id); }} className="flex-1 bg-gray-200 text-black py-2 rounded-lg hover:bg-gray-300 transition-colors">
-                                                Cancel
-                                            </button>
-                                        </div>
-                                    </div>
+                                    <VideoEditForm
+                                        video={videoData}
+                                        onUpdate={updateVideo}
+                                        onSave={saveVideo}
+                                        onCancel={() => {
+                                            setEditingVideo(null);
+                                            if (video.is_temp) deleteVideo(video.id);
+                                        }}
+                                    />
                                 ) : (
                                     <>
                                         {videoData.youtube_id ? (
